@@ -62,7 +62,7 @@ namespace ProMeasurement
         private bool HasBeenStop = false;
         private bool HasBeenStart = false;
         private bool HasBeenRelese = false;
-        bool stop = true;
+        bool stop = false;
         private TestMode CurrentModeTestState = TestMode.None;
         private FreeMode CurrentFreeTestState = FreeMode.None;
         private GlueTest CurrentGlueTestState = GlueTest.Rest;
@@ -85,16 +85,17 @@ namespace ProMeasurement
             graphPane.Y2Axis.Title.Text = "Position";
 
             graphPane.Y2AxisList.Add("Position");
+            graphPane.Y2AxisList[0].IsVisible = true;
 
             forceCurve = graphPane.AddCurve("Force", forceValues, Color.Blue, SymbolType.None);
             positionCurve = graphPane.AddCurve("Position", positionValues, Color.Red, SymbolType.None);
             positionCurve.YAxisIndex = 0; // Associate with the left Y-axis
             positionCurve.IsY2Axis = true;
-            graphPane.Y2AxisList[0].IsVisible = true;
 
-            newforceCurve = graphPane.AddCurve("Force", newPositionValues, Color.Black, SymbolType.None);
+
+            newforceCurve = graphPane.AddCurve("Force", newForceValues, Color.Black, SymbolType.None);
             newpositionCurve = graphPane.AddCurve("Position", newPositionValues, Color.DarkRed, SymbolType.None);
-            newpositionCurve.YAxisIndex = 1; // Associate with the right Y2-axis
+            newpositionCurve.YAxisIndex = 0; // Associate with the right Y2-axis
             newpositionCurve.IsY2Axis = true;
             newpositionCurve.IsVisible = false;
             newforceCurve.IsVisible = false;
@@ -154,26 +155,22 @@ namespace ProMeasurement
             {
                 case "Free":
                     CurrentModeTestState = TestMode.Free;
-                    if (stop == false)
-                        stop = true;
-                    else
-                        stop = false;
+                    stop = (stop == true) ? false : true;
                     break;
 
                 case "Glue":
                     CurrentModeTestState = TestMode.Glue;
+                    stop = false;
                     break;
 
                 case "Line":
                     CurrentModeTestState = TestMode.Line;
+                    stop = false;
                     break;
 
                 case "Rotary":
                     CurrentModeTestState = TestMode.Rotary;
-                    if (stop == false)
-                        stop = true;
-                    else
-                        stop = false;
+                    stop = (stop) ? false : true;
                     break;
 
                 default:
@@ -187,7 +184,7 @@ namespace ProMeasurement
             startGraph = false;
             HasBeenRelese = true;
             
-            if (textBoxSpeed.Text != "" && textBoxPlace.Text != "")
+            if (textBoxSpeed.Text != string.Empty && textBoxPlace.Text != string.Empty)
             {
                 int relese = Convert.ToInt32(textBoxPlace.Text);
                 relese -= 30;
@@ -204,21 +201,16 @@ namespace ProMeasurement
         {
             HasBeenStop = true;
             Stop();
-            
 
             if (CurrentGlueTestState == GlueTest.Testing)
             {
-                timerModeTest.Stop();
+                timerModeTest.Start();
                 btnStart.Enabled = true;
-                comboBoxMode.Text = string.Empty;
-
+                CurrentModeTestState = TestMode.Free;
+                CurrentFreeTestState = FreeMode.Free;
 
                 newpositionCurve.IsVisible = true;
                 newforceCurve.IsVisible = true;
-
-
-                zedGraphControl1.AxisChange();
-                zedGraphControl1.Invalidate();
             }
         }
 
@@ -514,8 +506,6 @@ namespace ProMeasurement
         // power meter function
         private void Open()
         {
-           
-
             _powerPort.Open("COM7", _BaudRate._38400, Parity.None, _DataBits._8, StopBits.One);
         }
 
@@ -537,7 +527,6 @@ namespace ProMeasurement
                 int indexOfN = value.IndexOf("N");
                 value = value.Substring(0, indexOfN);
                 force = Convert.ToDouble(value);
-
                 double elapsedTime = (DateTime.Now - testStartTime).TotalSeconds;
 
                 if(HasBeenStop == false)
@@ -545,16 +534,15 @@ namespace ProMeasurement
                     positionValues.Add(elapsedTime, position);
                     forceValues.Add(elapsedTime, force);
                 }
-
-                if(HasBeenStop == true)
+                else
                 {
                     newPositionValues.Add(elapsedTime, position);
                     newForceValues.Add(elapsedTime, force);
-                }
-                   
 
+                }
                 zedGraphControl1.AxisChange();
                 zedGraphControl1.Invalidate();
+               
             }
 
         }
@@ -627,12 +615,11 @@ namespace ProMeasurement
                                     Speed((uint)Convert.ToInt32(textBoxSpeed.Text));
                                     Position(Convert.ToInt32(textBoxPlace.Text));
                                     startGraph = true;
+                                    HasBeenStart = false;
                                     if (actual_position == Convert.ToInt32(textBoxPlace.Text))
                                         startGraph = false;
                                 }
                             }
-                           
-                           
                             btnSave.Enabled = true;
                             break;
                     }
@@ -675,6 +662,7 @@ namespace ProMeasurement
                                 btnRelese.Enabled = true;
                                 HasBeenRelese = false;
                                 startGraph = false;
+                                HasBeenStart = false;
                             }
                             break;
 
