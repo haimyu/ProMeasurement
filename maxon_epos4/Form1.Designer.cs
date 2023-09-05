@@ -70,7 +70,7 @@
             this.label11 = new System.Windows.Forms.Label();
             this.textBoxSpringConstant = new System.Windows.Forms.TextBox();
             this.label12 = new System.Windows.Forms.Label();
-            this.textBoxPoweraMeter = new System.Windows.Forms.TextBox();
+            this.textBoxPowerMeter = new System.Windows.Forms.TextBox();
             this.label13 = new System.Windows.Forms.Label();
             this.btnStop = new System.Windows.Forms.Button();
             this.comboBoxCom = new System.Windows.Forms.ComboBox();
@@ -442,12 +442,12 @@
             this.label12.TabIndex = 41;
             this.label12.Text = "Spring Constant";
             // 
-            // textBoxPoweraMeter
+            // textBoxPowerMeter
             // 
-            this.textBoxPoweraMeter.Location = new System.Drawing.Point(1004, 28);
-            this.textBoxPoweraMeter.Name = "textBoxPoweraMeter";
-            this.textBoxPoweraMeter.Size = new System.Drawing.Size(100, 22);
-            this.textBoxPoweraMeter.TabIndex = 42;
+            this.textBoxPowerMeter.Location = new System.Drawing.Point(1004, 28);
+            this.textBoxPowerMeter.Name = "textBoxPowerMeter";
+            this.textBoxPowerMeter.Size = new System.Drawing.Size(100, 22);
+            this.textBoxPowerMeter.TabIndex = 42;
             // 
             // label13
             // 
@@ -497,7 +497,7 @@
             this.Controls.Add(this.comboBoxCom);
             this.Controls.Add(this.btnStop);
             this.Controls.Add(this.label13);
-            this.Controls.Add(this.textBoxPoweraMeter);
+            this.Controls.Add(this.textBoxPowerMeter);
             this.Controls.Add(this.label12);
             this.Controls.Add(this.textBoxSpringConstant);
             this.Controls.Add(this.label11);
@@ -586,7 +586,7 @@
         private System.Windows.Forms.Label label11;
         private System.Windows.Forms.TextBox textBoxSpringConstant;
         private System.Windows.Forms.Label label12;
-        private System.Windows.Forms.TextBox textBoxPoweraMeter;
+        private System.Windows.Forms.TextBox textBoxPowerMeter;
         private System.Windows.Forms.Label label13;
         private System.Windows.Forms.Button btnStop;
         private System.Windows.Forms.ComboBox comboBoxCom;

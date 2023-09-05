@@ -1,11 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using ProMeasurement.Properties;
 using EposCmd.Net;
@@ -116,17 +110,23 @@ namespace ProMeasurement
             Open();
             timerPower.Enabled = true;
 
+           
+
 
             Actual_Position = _epos.Operation.MotionInfo.GetPositionIs() / (163840 / 3);
 
             btnStart.Enabled = false;
+            btnStop.Enabled = false;
             btnSave.Enabled = false;
             btnRelese.Enabled = false;
             comboBoxdirection.Enabled = false;
             textBoxDistance.Enabled = false;
             textBoxperiodicity.Enabled = false;
+            textBoxPlace.Enabled = false;
+            textBoxSpeed.Enabled = false;
             btnUp.Enabled = false;
             btnDown.Enabled = false;
+            comboBoxMode.Enabled = false;
 
         }
 
@@ -138,24 +138,10 @@ namespace ProMeasurement
         private void comboBoxMode_SelectedIndexChanged(object sender, EventArgs e)
         {
             timerModeTest.Start();
-            btnStart.Enabled = true;
-        }
-
-        private void btnStart_Click(object sender, EventArgs e)
-        {
-            
-            HasBeenStart = true;
-
-            textBoxPositionStart.Text = string.Format("{0}", _epos.Operation.MotionInfo.GetPositionIs() / (163840 / 3));
-            Start_Position = Convert.ToInt32(textBoxPositionStart.Text);
-            if(CurrentLineTestState == LineTest.StartTest || CurrentRotaryTestState == RotaryTest.Testing)
-                Distance = Convert.ToInt32(textBoxDistance.Text);
-
             switch (comboBoxMode.Text)
             {
                 case "Free":
                     CurrentModeTestState = TestMode.Free;
-                    stop = (stop == true) ? false : true;
                     break;
 
                 case "Glue":
@@ -170,18 +156,44 @@ namespace ProMeasurement
 
                 case "Rotary":
                     CurrentModeTestState = TestMode.Rotary;
-                    stop = (stop) ? false : true;
                     break;
 
                 default:
                     CurrentModeTestState = TestMode.None;
                     break;
             }
+            
+        }
+
+        private void btnStart_Click(object sender, EventArgs e)
+        {
+            
+            HasBeenStart = true;
+
+            textBoxPositionStart.Text = string.Format("{0}", _epos.Operation.MotionInfo.GetPositionIs() / (163840 / 3));
+            Start_Position = Convert.ToInt32(textBoxPositionStart.Text);
+            if(CurrentLineTestState == LineTest.StartTest || CurrentRotaryTestState == RotaryTest.Testing)
+                Distance = Convert.ToInt32(textBoxDistance.Text);
+            switch (comboBoxMode.Text)
+            {
+                case "Free":
+                    stop = (stop == true) ? false : true;
+                    break;
+
+                case "Rotary":
+                    stop = (stop == true) ? false : true;
+                    break;
+
+                default:
+                    stop = false;
+                    break;
+            }
+
+
         }
 
         private void btnRelese_Click(object sender, EventArgs e)
         {
-            startGraph = false;
             HasBeenRelese = true;
             
             if (textBoxSpeed.Text != string.Empty && textBoxPlace.Text != string.Empty)
@@ -205,9 +217,9 @@ namespace ProMeasurement
             if (CurrentGlueTestState == GlueTest.Testing)
             {
                 timerModeTest.Start();
-                btnStart.Enabled = true;
                 CurrentModeTestState = TestMode.Free;
-                CurrentFreeTestState = FreeMode.Free;
+                CurrentFreeTestState = FreeMode.None;
+                btnStart.Enabled = true;
 
                 newpositionCurve.IsVisible = true;
                 newforceCurve.IsVisible = true;
@@ -216,20 +228,18 @@ namespace ProMeasurement
 
         private void btnSave_Click(object sender, EventArgs e)
         {
-            if(textBoxType.Text == null || textBoxTDescription.Text == null || textBoxCNum.Text == null)
-            {
-                btnSave.Enabled = false;
-            }
-            else
-            {
-                SaveToExcel();
-            } 
+            SaveToExcel();
         }
 
         private void btnUp_MouseDown(object sender, MouseEventArgs e)
         {
             _epos.Operation.ProfileVelocityMode.ActivateProfileVelocityMode();
             _epos.Operation.ProfileVelocityMode.MoveWithVelocity(1000);
+        }
+        private void btnDown_MouseDown_1(object sender,MouseEventArgs e)
+        {
+            _epos.Operation.ProfileVelocityMode.ActivateProfileVelocityMode();
+            _epos.Operation.ProfileVelocityMode.MoveWithVelocity(-1000);
         }
 
         private void btnUp_MouseUp(object sender,MouseEventArgs e)
@@ -242,11 +252,6 @@ namespace ProMeasurement
             Stop();
         }
 
-        private void btnDown_MouseDown_1(object sender,MouseEventArgs e)
-        {
-            _epos.Operation.ProfileVelocityMode.ActivateProfileVelocityMode();
-            _epos.Operation.ProfileVelocityMode.MoveWithVelocity(-1000);
-        }
 
         private void btnRestart_Click(object sender, EventArgs e)
         {
@@ -309,7 +314,9 @@ namespace ProMeasurement
                 StopRefresh();
 
                 MessageBox.Show(a.Message);
-            } 
+            }
+            if (textBoxPowerMeter.Text != string.Empty)
+                comboBoxMode.Enabled = true;
         }
 
         private void timerPower_Tick(object sender, EventArgs e)
@@ -371,8 +378,8 @@ namespace ProMeasurement
 
         private void Position(float positionInmm)
         {
-            if (textBoxPoweraMeter.Text != string.Empty)
-                Nforce = Convert.ToDouble(textBoxPoweraMeter.Text);
+            if (textBoxPowerMeter.Text != string.Empty)
+                Nforce = Convert.ToDouble(textBoxPowerMeter.Text);
 
             float stepTo_mm = 163840 / 3; // 1 mm = 54613.333 steps
             int positionInSteps = (int)Convert.ToInt64( stepTo_mm * positionInmm);
@@ -605,22 +612,26 @@ namespace ProMeasurement
                     switch (CurrentFreeTestState)
                     {
                         case FreeMode.None:
-                            CurrentFreeTestState = FreeMode.Free; 
+                            textBoxSpeed.Enabled = true;
+                            textBoxPlace.Enabled = true;
+                            btnStop.Enabled = true;
+                            btnStart.Enabled = true;
+                            HasBeenStart = false;
+                            if (textBoxPlace.Text != string.Empty && textBoxSpeed.Text != string.Empty)
+                                CurrentFreeTestState = FreeMode.Free;
                             break;
                         case FreeMode.Free:
                             if(HasBeenStart == true)
                             {
-                                if(textBoxPlace.Text!= string.Empty && textBoxSpeed.Text != string.Empty)
-                                {
-                                    Speed((uint)Convert.ToInt32(textBoxSpeed.Text));
-                                    Position(Convert.ToInt32(textBoxPlace.Text));
-                                    startGraph = true;
-                                    HasBeenStart = false;
-                                    if (actual_position == Convert.ToInt32(textBoxPlace.Text))
-                                        startGraph = false;
-                                }
+                                Speed((uint)Convert.ToInt32(textBoxSpeed.Text));
+                                Position(Convert.ToInt32(textBoxPlace.Text));
+                                startGraph = true;
+                                HasBeenStart = false;
+                                if (actual_position == Convert.ToInt32(textBoxPlace.Text))
+                                    startGraph = false;
                             }
-                            btnSave.Enabled = true;
+                            if (textBoxType.Text != string.Empty && textBoxTDescription.Text != string.Empty && textBoxCNum.Text != string.Empty)
+                                btnSave.Enabled = true;
                             break;
                     }
                     break;
@@ -631,6 +642,7 @@ namespace ProMeasurement
                         case GlueTest.Rest:
                             if (HasBeenStop == false)
                                 CurrentGlueTestState = GlueTest.MoveToPosition;
+                            btnStart.Enabled = true;
                             break;
 
                         case GlueTest.MoveToPosition:
@@ -650,6 +662,7 @@ namespace ProMeasurement
                                 Position(0);
                                 btnRelese.Enabled = false;
                                 btnStart.Enabled = false;
+                                btnStop.Enabled = false;
                                 comboBoxMode.Enabled = false;
 
                                 CurrentGlueTestState = GlueTest.Testing;
@@ -694,6 +707,8 @@ namespace ProMeasurement
                         case LineTest.Rest:
                             if (HasBeenStop == false)
                                 CurrentLineTestState = LineTest.MoveToPosition;
+                            btnStart.Enabled = true;
+                            textBoxSpeed.Enabled = true;
                             break;
 
                         case LineTest.MoveToPosition:
@@ -720,12 +735,6 @@ namespace ProMeasurement
                         case LineTest.StartTest:
                             if (HasBeenStart == true)
                                 CurrentLineTestState = LineTest.Testing1;
-
-                            comboBoxdirection.Enabled = false;
-                            textBoxDistance.Enabled = false;
-                            textBoxperiodicity.Enabled = false;
-
-                            startGraph = true;
                             break;
 
                         case LineTest.Testing1:
@@ -769,23 +778,25 @@ namespace ProMeasurement
                             break;
 
                         case LineTest.Check2:
-                            if (done == Convert.ToInt32(textBoxperiodicity.Text))
-                            {
-                                CurrentLineTestState = LineTest.Release;
-                                startGraph = false;
-                            }
                             if (actual_position == Start_Position)
                             {
                                 CurrentLineTestState = LineTest.Testing1;
+                            }
+                            if (done == Convert.ToInt32(textBoxperiodicity.Text))
+                            {
+                                CurrentLineTestState = LineTest.Release;
                             }
                             break;
 
                         case LineTest.Release:
                             CurrentLineTestState = LineTest.Save;
-                            break;
+                            
+                                break;
 
                         case LineTest.Save:
-                            if (textBoxCNum.Text != string.Empty && textBoxTDescription.Text != string.Empty && textBoxType.Text != string.Empty)
+                            if (actual_position == Start_Position)
+                                startGraph = false;
+                            if (textBoxCNum.Text != string.Empty && textBoxTDescription.Text != string.Empty && textBoxType.Text != string.Empty) 
                                 btnSave.Enabled = true;
                             break;
 
@@ -840,7 +851,6 @@ namespace ProMeasurement
 
                             spring_constant = force / Convert.ToDouble(textBoxDistance.Text);
                             textBoxSpringConstant.Text = Convert.ToString(spring_constant);
-
                             break;
 
                         default:
