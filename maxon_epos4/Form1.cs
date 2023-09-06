@@ -8,17 +8,9 @@ using System.Security.Policy;
 using System.IO.Ports;
 using static ProMeasurement.Test;
 using ZedGraph;
-using System.Threading;
 using System.IO;
 using OfficeOpenXml;
-using OfficeOpenXml.Drawing;
-using OfficeOpenXml.Drawing.Chart;
-using OfficeOpenXml.Packaging;
-using PdfSharp.Drawing;
-using PdfSharp.Pdf;
-using PdfSharp.Drawing.Layout;
-using System.Security.Cryptography;
-using System.Windows;
+
 
 namespace ProMeasurement
 {
@@ -26,7 +18,7 @@ namespace ProMeasurement
     {   
         //devices libraries
         private DeviceManager _connector;
-        private Device _epos;
+        private Device _epos4;
         private Rs232 _powerPort;
 
         // graph 1
@@ -56,7 +48,7 @@ namespace ProMeasurement
         private bool HasBeenStop = false;
         private bool HasBeenStart = false;
         private bool HasBeenRelese = false;
-        bool stop = false;
+        bool stop = true;
         private TestMode CurrentModeTestState = TestMode.None;
         private FreeMode CurrentFreeTestState = FreeMode.None;
         private GlueTest CurrentGlueTestState = GlueTest.Rest;
@@ -113,7 +105,7 @@ namespace ProMeasurement
            
 
 
-            Actual_Position = _epos.Operation.MotionInfo.GetPositionIs() / (163840 / 3);
+            Actual_Position = _epos4.Operation.MotionInfo.GetPositionIs() / (163840 / 3);
 
             btnStart.Enabled = false;
             btnStop.Enabled = false;
@@ -170,7 +162,7 @@ namespace ProMeasurement
             
             HasBeenStart = true;
 
-            textBoxPositionStart.Text = string.Format("{0}", _epos.Operation.MotionInfo.GetPositionIs() / (163840 / 3));
+            textBoxPositionStart.Text = string.Format("{0}", _epos4.Operation.MotionInfo.GetPositionIs() / (163840 / 3));
             Start_Position = Convert.ToInt32(textBoxPositionStart.Text);
             if(CurrentLineTestState == LineTest.StartTest || CurrentRotaryTestState == RotaryTest.Testing)
                 Distance = Convert.ToInt32(textBoxDistance.Text);
@@ -224,6 +216,7 @@ namespace ProMeasurement
                 newpositionCurve.IsVisible = true;
                 newforceCurve.IsVisible = true;
             }
+            timerModeTest.Stop();
         }
 
         private void btnSave_Click(object sender, EventArgs e)
@@ -233,13 +226,14 @@ namespace ProMeasurement
 
         private void btnUp_MouseDown(object sender, MouseEventArgs e)
         {
-            _epos.Operation.ProfileVelocityMode.ActivateProfileVelocityMode();
-            _epos.Operation.ProfileVelocityMode.MoveWithVelocity(1000);
+            _epos4.Operation.ProfileVelocityMode.ActivateProfileVelocityMode();
+            _epos4.Operation.ProfileVelocityMode.MoveWithVelocity(1000);
         }
+
         private void btnDown_MouseDown_1(object sender,MouseEventArgs e)
         {
-            _epos.Operation.ProfileVelocityMode.ActivateProfileVelocityMode();
-            _epos.Operation.ProfileVelocityMode.MoveWithVelocity(-1000);
+            _epos4.Operation.ProfileVelocityMode.ActivateProfileVelocityMode();
+            _epos4.Operation.ProfileVelocityMode.MoveWithVelocity(-1000);
         }
 
         private void btnUp_MouseUp(object sender,MouseEventArgs e)
@@ -295,11 +289,11 @@ namespace ProMeasurement
 
         private void timerEngine_Tick(object sender, EventArgs e)
         {
-            position = _epos.Operation.MotionInfo.GetPositionIs() / (163840 / 3);
+            position = _epos4.Operation.MotionInfo.GetPositionIs() / (163840 / 3);
             int actualValue = Convert.ToInt32(position);
             try
             {
-                if (_epos != null)
+                if (_epos4 != null)
                 {
                     textBoxPositionActualValue.Text = string.Format("{0}", actualValue);
                 }
@@ -351,9 +345,9 @@ namespace ProMeasurement
             ////
             try
             {
-                _epos = _connector.CreateDevice(1);
+                _epos4 = _connector.CreateDevice(1);
 
-                StateMachine sm = _epos.Operation.StateMachine;
+                StateMachine sm = _epos4.Operation.StateMachine;
 
                 if (sm.GetFaultState())
                 {
@@ -385,7 +379,7 @@ namespace ProMeasurement
             int positionInSteps = (int)Convert.ToInt64( stepTo_mm * positionInmm);
             try
             {
-               ProfilePositionMode ppm = _epos.Operation.ProfilePositionMode;
+               ProfilePositionMode ppm = _epos4.Operation.ProfilePositionMode;
 
                 textBoxPositionStart.Text = string.Format("{0}",Actual_Position);
                 if(stop == false)
@@ -421,11 +415,11 @@ namespace ProMeasurement
         {
             try
             {
-                ProfilePositionMode ppm = _epos.Operation.ProfilePositionMode;
+                ProfilePositionMode ppm = _epos4.Operation.ProfilePositionMode;
 
                 ppm.ActivateProfilePositionMode();
                 ppm.SetPositionProfile(speed, 1000, 1000);
-                textBoxAOM.Text = _epos.Operation.OperationMode.GetOperationModeAsString();
+                textBoxAOM.Text = _epos4.Operation.OperationMode.GetOperationModeAsString();
             }
             catch (DeviceException a)
             {
@@ -452,15 +446,14 @@ namespace ProMeasurement
         {
             try
             {
-                ProfilePositionMode ppm = _epos.Operation.ProfilePositionMode;
+                ProfilePositionMode ppm = _epos4.Operation.ProfilePositionMode;
 
                 ppm.ActivateProfilePositionMode();
 
-                textBoxAOM.Text = _epos.Operation.OperationMode.GetOperationModeAsString();
+                textBoxAOM.Text = _epos4.Operation.OperationMode.GetOperationModeAsString();
 
                 ppm.HaltPositionMovement();
 
-                timerModeTest.Stop();
             }
             catch (DeviceException a)
             {
@@ -495,7 +488,7 @@ namespace ProMeasurement
                 btnStart.Enabled = false;
                 btnStopP.Enabled = false;
 
-                _epos = null;
+                _epos4 = null;
             }
             catch (Exception e)
             {
@@ -602,7 +595,7 @@ namespace ProMeasurement
         //state machine timers
         private void timerModeTest_Tick(object sender, EventArgs e)
         {
-            int actual_position = _epos.Operation.MotionInfo.GetPositionIs() / (163840 / 3);
+            int actual_position = _epos4.Operation.MotionInfo.GetPositionIs() / (163840 / 3);
             double spring_constant;
 
 
@@ -614,9 +607,13 @@ namespace ProMeasurement
                         case FreeMode.None:
                             textBoxSpeed.Enabled = true;
                             textBoxPlace.Enabled = true;
+                            textBoxDistance.Enabled = true;
                             btnStop.Enabled = true;
                             btnStart.Enabled = true;
+                            btnUp.Enabled = true;
+                            btnDown.Enabled = true;
                             HasBeenStart = false;
+                            stop = false;
                             if (textBoxPlace.Text != string.Empty && textBoxSpeed.Text != string.Empty)
                                 CurrentFreeTestState = FreeMode.Free;
                             break;
@@ -626,9 +623,12 @@ namespace ProMeasurement
                                 Speed((uint)Convert.ToInt32(textBoxSpeed.Text));
                                 Position(Convert.ToInt32(textBoxPlace.Text));
                                 startGraph = true;
-                                HasBeenStart = false;
+
                                 if (actual_position == Convert.ToInt32(textBoxPlace.Text))
+                                {
                                     startGraph = false;
+                                    HasBeenStart = false;
+                                }
                             }
                             if (textBoxType.Text != string.Empty && textBoxTDescription.Text != string.Empty && textBoxCNum.Text != string.Empty)
                                 btnSave.Enabled = true;
@@ -646,10 +646,12 @@ namespace ProMeasurement
                             break;
 
                         case GlueTest.MoveToPosition:
+                            ClearGraph();
                             Speed(1000);
                             Position(-50);
+                            stop = false;
                             HasBeenStart = false;
-                            if (_epos.Operation.MotionInfo.GetPositionIs() / (163840 / 3) == -50)
+                            if (_epos4.Operation.MotionInfo.GetPositionIs() / (163840 / 3) == -50)
                                 CurrentGlueTestState = GlueTest.StartTest;
                             break;
 
@@ -664,12 +666,12 @@ namespace ProMeasurement
                                 btnStart.Enabled = false;
                                 btnStop.Enabled = false;
                                 comboBoxMode.Enabled = false;
-
+                                HasBeenStart = false;
                                 CurrentGlueTestState = GlueTest.Testing;
                             }
                             break;
                         case GlueTest.Testing:
-                            if (_epos.Operation.MotionInfo.GetPositionIs() / (163840 / 3) == 0)
+                            if (_epos4.Operation.MotionInfo.GetPositionIs() / (163840 / 3) == 0)
                             {
                                 CurrentGlueTestState = GlueTest.Release;
                                 btnRelese.Enabled = true;
@@ -680,7 +682,7 @@ namespace ProMeasurement
                             break;
 
                         case GlueTest.Release:
-                            if (_epos.Operation.MotionInfo.GetPositionIs() / (163840 / 3) == 0 && HasBeenRelese == true)
+                            if (_epos4.Operation.MotionInfo.GetPositionIs() / (163840 / 3) == 0 && HasBeenRelese == true)
                             {
                                 Speed(1000);
                                 Position(-10);
@@ -712,6 +714,7 @@ namespace ProMeasurement
                             break;
 
                         case LineTest.MoveToPosition:
+                            ClearGraph();   
                             Speed(1000);
                             Position(0);
 
@@ -819,11 +822,13 @@ namespace ProMeasurement
                             break;
 
                         case RotaryTest.Settings:
-                            if (textBoxDistance.Text != string.Empty && textBoxSpeed.Text != string.Empty && HasBeenStart == true)
+                            if (textBoxDistance.Text != string.Empty && textBoxSpeed.Text != string.Empty )
                                 CurrentRotaryTestState = RotaryTest.Testing;
                             textBoxSpeed.Enabled = true;
                             textBoxDistance.Enabled = true;
+                            btnStart.Enabled = true;
                             HasBeenStart = false;
+                            stop = false;
                             textBoxPositionStart.Text = textBoxPositionActualValue.Text;
                             break;
 
