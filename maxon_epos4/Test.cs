@@ -48,7 +48,6 @@ namespace ProMeasurement
         public enum RotaryTest
         {
             Rest,
-            MoveToStart,
             Settings,
             Testing,
             Release,

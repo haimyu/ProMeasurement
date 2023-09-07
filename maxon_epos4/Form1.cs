@@ -16,7 +16,7 @@ namespace ProMeasurement
 {
     public partial class Pro_Measurement : Form
     {   
-        //devices libraries
+        //devices DLL's
         private DeviceManager _connector;
         private Device _epos4;
         private Rs232 _powerPort;
@@ -28,9 +28,9 @@ namespace ProMeasurement
         private LineItem forceCurve;
         private LineItem positionCurve;
         GraphPane graphPane;
+        private string value;
+        private double force;
         private double position = 0;
-        string value;
-        double force;
         private bool startGraph = false;
 
         //graph 2
@@ -38,7 +38,6 @@ namespace ProMeasurement
         private PointPairList newForceValues = new PointPairList();
         private LineItem newforceCurve;
         private LineItem newpositionCurve;
-
 
         // state machine 
         private int done = 0;
@@ -48,20 +47,19 @@ namespace ProMeasurement
         private bool HasBeenStop = false;
         private bool HasBeenStart = false;
         private bool HasBeenRelese = false;
-        bool stop = true;
+        private bool stop = false;
         private TestMode CurrentModeTestState = TestMode.None;
         private FreeMode CurrentFreeTestState = FreeMode.None;
         private GlueTest CurrentGlueTestState = GlueTest.Rest;
         private LineTest CurrentLineTestState = LineTest.Rest;
         private RotaryTest CurrentRotaryTestState = RotaryTest.Rest;
-
-        double Nforce;
+        
+        //control to save the power meter
+        private double Nforce;
 
         public Pro_Measurement()
         {
             InitializeComponent();
-           
-           
 
             // Set up the ZedGraphControl
             graphPane = zedGraphControl1.GraphPane;
@@ -75,38 +73,27 @@ namespace ProMeasurement
 
             forceCurve = graphPane.AddCurve("Force", forceValues, Color.Blue, SymbolType.None);
             positionCurve = graphPane.AddCurve("Position", positionValues, Color.Red, SymbolType.None);
-            positionCurve.YAxisIndex = 0; // Associate with the left Y-axis
+            forceCurve.Line.Width = 2;
+            positionCurve.Line.Width = 2;
+            positionCurve.YAxisIndex = 0; 
             positionCurve.IsY2Axis = true;
 
-
-            newforceCurve = graphPane.AddCurve("Force", newForceValues, Color.Black, SymbolType.None);
-            newpositionCurve = graphPane.AddCurve("Position", newPositionValues, Color.DarkRed, SymbolType.None);
-            newpositionCurve.YAxisIndex = 0; // Associate with the right Y2-axis
+            newforceCurve = graphPane.AddCurve("Force", newForceValues, Color.Green, SymbolType.None);
+            newpositionCurve = graphPane.AddCurve("Position", newPositionValues, Color.Purple, SymbolType.None);
+            newpositionCurve.Line.Width = 2;
+            newforceCurve.Line.Width = 2;
+            newpositionCurve.YAxisIndex = 0; 
             newpositionCurve.IsY2Axis = true;
             newpositionCurve.IsVisible = false;
             newforceCurve.IsVisible = false;
-
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            //set up the setting in the load the program
             rbtnRelative.Checked = true;
             timerEngine.Interval = 500;
             timerEngine.Enabled = false;
-            _powerPort = new Rs232();
-            _powerPort.DataReceived += _powerPort_DataReceived;
-
-            testStartTime = DateTime.Now;
-
-            deviceSetting();
-            Open();
-            timerPower.Enabled = true;
-
-           
-
-
-            Actual_Position = _epos4.Operation.MotionInfo.GetPositionIs() / (163840 / 3);
-
             btnStart.Enabled = false;
             btnStop.Enabled = false;
             btnSave.Enabled = false;
@@ -119,6 +106,15 @@ namespace ProMeasurement
             btnUp.Enabled = false;
             btnDown.Enabled = false;
             comboBoxMode.Enabled = false;
+            Actual_Position = _epos4.Operation.MotionInfo.GetPositionIs() / (163840 / 3);
+
+            //starting the power meter
+            _powerPort = new Rs232();
+            _powerPort.DataReceived += _powerPort_DataReceived;
+            deviceSetting();
+            Open();
+            timerPower.Enabled = true;
+
 
         }
 
@@ -138,12 +134,10 @@ namespace ProMeasurement
 
                 case "Glue":
                     CurrentModeTestState = TestMode.Glue;
-                    stop = false;
                     break;
 
                 case "Line":
                     CurrentModeTestState = TestMode.Line;
-                    stop = false;
                     break;
 
                 case "Rotary":
@@ -154,51 +148,39 @@ namespace ProMeasurement
                     CurrentModeTestState = TestMode.None;
                     break;
             }
-            
+            testStartTime = DateTime.Now;
         }
 
         private void btnStart_Click(object sender, EventArgs e)
-        {
-            
+        {           
             HasBeenStart = true;
 
             textBoxPositionStart.Text = string.Format("{0}", _epos4.Operation.MotionInfo.GetPositionIs() / (163840 / 3));
             Start_Position = Convert.ToInt32(textBoxPositionStart.Text);
+
             if(CurrentLineTestState == LineTest.StartTest || CurrentRotaryTestState == RotaryTest.Testing)
                 Distance = Convert.ToInt32(textBoxDistance.Text);
+
             switch (comboBoxMode.Text)
             {
                 case "Free":
-                    stop = (stop == true) ? false : true;
+                    stop = !stop;
                     break;
 
                 case "Rotary":
-                    stop = (stop == true) ? false : true;
+                    stop = !stop;
                     break;
 
                 default:
                     stop = false;
                     break;
             }
-
-
         }
 
         private void btnRelese_Click(object sender, EventArgs e)
         {
             HasBeenRelese = true;
-            
-            if (textBoxSpeed.Text != string.Empty && textBoxPlace.Text != string.Empty)
-            {
-                int relese = Convert.ToInt32(textBoxPlace.Text);
-                relese -= 30;
-                Speed((uint)Convert.ToInt32(textBoxSpeed.Text));
-                Position(relese);
-            }
-            else
-            {
-                CurrentGlueTestState = GlueTest.Release;
-            }   
+            CurrentGlueTestState = GlueTest.Release;
         }
 
         private void btnStop_Click(object sender, EventArgs e)
@@ -245,7 +227,6 @@ namespace ProMeasurement
         {
             Stop();
         }
-
 
         private void btnRestart_Click(object sender, EventArgs e)
         {
@@ -640,7 +621,7 @@ namespace ProMeasurement
                     switch (CurrentGlueTestState)
                     {
                         case GlueTest.Rest:
-                            if (HasBeenStop == false)
+                            if (HasBeenStop == true)
                                 CurrentGlueTestState = GlueTest.MoveToPosition;
                             btnStart.Enabled = true;
                             break;
@@ -707,7 +688,7 @@ namespace ProMeasurement
                     switch (CurrentLineTestState)
                     {
                         case LineTest.Rest:
-                            if (HasBeenStop == false)
+                            if (HasBeenStop == true)
                                 CurrentLineTestState = LineTest.MoveToPosition;
                             btnStart.Enabled = true;
                             textBoxSpeed.Enabled = true;
@@ -812,7 +793,6 @@ namespace ProMeasurement
                     switch (CurrentRotaryTestState)
                     {
                         case RotaryTest.Rest:
-                            CurrentRotaryTestState = RotaryTest.MoveToStart;
                             btnDown.Enabled = true;
                             btnUp.Enabled = true;
                             break;

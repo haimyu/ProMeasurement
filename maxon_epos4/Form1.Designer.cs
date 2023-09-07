@@ -73,8 +73,6 @@
             this.textBoxPowerMeter = new System.Windows.Forms.TextBox();
             this.label13 = new System.Windows.Forms.Label();
             this.btnStop = new System.Windows.Forms.Button();
-            this.comboBoxCom = new System.Windows.Forms.ComboBox();
-            this.label14 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // btnStopP
@@ -468,33 +466,11 @@
             this.btnStop.UseVisualStyleBackColor = true;
             this.btnStop.Click += new System.EventHandler(this.btnStart_Click);
             // 
-            // comboBoxCom
-            // 
-            this.comboBoxCom.FormattingEnabled = true;
-            this.comboBoxCom.Items.AddRange(new object[] {
-            "COM 7",
-            "COM 8"});
-            this.comboBoxCom.Location = new System.Drawing.Point(1126, 27);
-            this.comboBoxCom.Name = "comboBoxCom";
-            this.comboBoxCom.Size = new System.Drawing.Size(105, 24);
-            this.comboBoxCom.TabIndex = 45;
-            // 
-            // label14
-            // 
-            this.label14.AutoSize = true;
-            this.label14.Location = new System.Drawing.Point(1126, 6);
-            this.label14.Name = "label14";
-            this.label14.Size = new System.Drawing.Size(37, 16);
-            this.label14.TabIndex = 46;
-            this.label14.Text = "COM";
-            // 
             // Pro_Measurement
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1763, 641);
-            this.Controls.Add(this.label14);
-            this.Controls.Add(this.comboBoxCom);
             this.Controls.Add(this.btnStop);
             this.Controls.Add(this.label13);
             this.Controls.Add(this.textBoxPowerMeter);
@@ -589,8 +565,6 @@
         private System.Windows.Forms.TextBox textBoxPowerMeter;
         private System.Windows.Forms.Label label13;
         private System.Windows.Forms.Button btnStop;
-        private System.Windows.Forms.ComboBox comboBoxCom;
-        private System.Windows.Forms.Label label14;
     }
 }
 
