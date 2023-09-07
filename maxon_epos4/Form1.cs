@@ -230,7 +230,7 @@ namespace ProMeasurement
 
         private void btnRestart_Click(object sender, EventArgs e)
         {
-            timerModeTest.Stop();
+            CurrentModeTestState = TestMode.None;
             startGraph = false;
             Stop();
 
@@ -621,7 +621,7 @@ namespace ProMeasurement
                     switch (CurrentGlueTestState)
                     {
                         case GlueTest.Rest:
-                            if (HasBeenStop == true)
+                            if (HasBeenStop == false)
                                 CurrentGlueTestState = GlueTest.MoveToPosition;
                             btnStart.Enabled = true;
                             break;
@@ -793,12 +793,9 @@ namespace ProMeasurement
                     switch (CurrentRotaryTestState)
                     {
                         case RotaryTest.Rest:
+                            CurrentRotaryTestState = RotaryTest.Settings;
                             btnDown.Enabled = true;
                             btnUp.Enabled = true;
-                            break;
-
-                        case RotaryTest.MoveToStart:
-                            CurrentRotaryTestState = RotaryTest.Settings;
                             break;
 
                         case RotaryTest.Settings:
