@@ -106,7 +106,7 @@ namespace ProMeasurement
             btnUp.Enabled = false;
             btnDown.Enabled = false;
             comboBoxMode.Enabled = false;
-            Actual_Position = _epos4.Operation.MotionInfo.GetPositionIs() / (163840 / 3);
+
 
             //starting the power meter
             _powerPort = new Rs232();
@@ -115,6 +115,7 @@ namespace ProMeasurement
             Open();
             timerPower.Enabled = true;
 
+            Actual_Position = _epos4.Operation.MotionInfo.GetPositionIs() / (163840 / 3);
 
         }
 
@@ -134,6 +135,7 @@ namespace ProMeasurement
 
                 case "Glue":
                     CurrentModeTestState = TestMode.Glue;
+                    HasBeenStart = false;
                     break;
 
                 case "Line":
@@ -487,7 +489,7 @@ namespace ProMeasurement
         // power meter function
         private void Open()
         {
-            _powerPort.Open("COM7", _BaudRate._38400, Parity.None, _DataBits._8, StopBits.One);
+            _powerPort.Open("COM8", _BaudRate._38400, Parity.None, _DataBits._8, StopBits.One);
         }
 
         public void _powerPort_DataReceived(object sender, System.IO.Ports.SerialDataReceivedEventArgs e)
@@ -621,7 +623,7 @@ namespace ProMeasurement
                     switch (CurrentGlueTestState)
                     {
                         case GlueTest.Rest:
-                            if (HasBeenStop == false)
+                            if (HasBeenStop == false || HasBeenStart == true)
                                 CurrentGlueTestState = GlueTest.MoveToPosition;
                             btnStart.Enabled = true;
                             break;
@@ -688,16 +690,14 @@ namespace ProMeasurement
                     switch (CurrentLineTestState)
                     {
                         case LineTest.Rest:
-                            if (HasBeenStop == true)
-                                CurrentLineTestState = LineTest.MoveToPosition;
+                            if (HasBeenStop == false)
+                                CurrentLineTestState = LineTest.MoveToStart;
                             btnStart.Enabled = true;
                             textBoxSpeed.Enabled = true;
                             break;
 
-                        case LineTest.MoveToPosition:
+                        case LineTest.MoveToStart:
                             ClearGraph();   
-                            Speed(1000);
-                            Position(0);
 
                             btnDown.Enabled = true;
                             btnUp.Enabled = true;
@@ -768,14 +768,9 @@ namespace ProMeasurement
                             }
                             if (done == Convert.ToInt32(textBoxperiodicity.Text))
                             {
-                                CurrentLineTestState = LineTest.Release;
+                                CurrentLineTestState = LineTest.Save;
                             }
                             break;
-
-                        case LineTest.Release:
-                            CurrentLineTestState = LineTest.Save;
-                            
-                                break;
 
                         case LineTest.Save:
                             if (actual_position == Start_Position)
@@ -829,10 +824,15 @@ namespace ProMeasurement
 
                         case RotaryTest.Save:
                             if (textBoxCNum.Text != string.Empty && textBoxTDescription.Text != string.Empty && textBoxType.Text != string.Empty)
+                            {
                                 btnSave.Enabled = true;
+                            }
 
-                            spring_constant = force / Convert.ToDouble(textBoxDistance.Text);
+                            int indexOfN = value.IndexOf("N");
+                            value = value.Substring(0, indexOfN);
+                            spring_constant = Convert.ToDouble(value) / Convert.ToDouble(textBoxDistance.Text);
                             textBoxSpringConstant.Text = Convert.ToString(spring_constant);
+                            CurrentRotaryTestState = RotaryTest.Rest;
                             break;
 
                         default:
