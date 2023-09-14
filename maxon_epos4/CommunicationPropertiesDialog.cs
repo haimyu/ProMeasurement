@@ -86,7 +86,7 @@ namespace ProMeasurement
 
         private void DefaultsBtn_Click(object sender, System.EventArgs e)
         {
-            Com = "COM1";
+            Com = "COM3";
             BaudRate = _BaudRate._38400;
             Parity = Parity.None;
             DataBits = _DataBits._8;

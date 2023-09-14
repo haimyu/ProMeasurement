@@ -19,7 +19,7 @@ namespace ProMeasurement
         internal static IniData Default()
         {
             IniData data = new IniData();
-            data.Communication.ComPort = "COM1";
+            data.Communication.port = "COM5";
             return data;
         }
         public void Serialize()
@@ -57,7 +57,7 @@ namespace ProMeasurement
     [Serializable]
     public class CommunicationData
     {
-        public string ComPort = "COM1";
+        public string port = "COM5";
     }
 
     public enum SerType { Binnary, XML };

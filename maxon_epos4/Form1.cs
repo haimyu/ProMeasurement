@@ -18,7 +18,7 @@ namespace ProMeasurement
     {
         CommunicationPropertiesDialog communicationPropertiesDialog = new CommunicationPropertiesDialog(true);
         CommunicationProperties CommProp = null;
-        private string port = "COM7";
+        private string port = "COM3";
 
         //devices DLL's
         private DeviceManager _connector;
@@ -71,14 +71,14 @@ namespace ProMeasurement
             {
                 Program.INI = IniData.Deserialize(SerType.XML, IniData.ApplicationDataPath);
             }
-            catch (Exception)
+            catch 
             {
 
-                Program.INI.Communication.ComPort = port = communicationPropertiesDialog.Com;
+                Program.INI.Communication.port = port;
+                port = communicationPropertiesDialog.Com;
                 Program.INI.Serialize();
             }
-
-
+            port = Program.INI.Communication.port;
 
             // Set up the ZedGraphControl
             graphPane = zedGraphControl1.GraphPane;
@@ -126,13 +126,28 @@ namespace ProMeasurement
             textBoxSpeed.Enabled = false;
             btnUp.Enabled = false;
             btnDown.Enabled = false;
-
-           
         }
 
         private void Pro_Measurement_FormClosed(object sender, FormClosedEventArgs e)
         {
             Stop();
+        }
+
+        private void btnSettingMeasurement_Click(object sender, EventArgs e)
+        {
+            if (CommProp == null)
+            {
+                CommProp = new CommunicationProperties(_BaudRate._38400, Parity.None, _DataBits._8, StopBits.One);
+            }
+
+            communicationPropertiesDialog.Set(CommProp, port);
+
+            if (communicationPropertiesDialog.ShowDialog() == DialogResult.OK)
+            {
+                port = communicationPropertiesDialog.Com;
+                Program.INI.Communication.port = port;
+                Program.INI.Serialize();
+            }
         }
 
         private void btnConnectMotor_Click(object sender, EventArgs e)
@@ -141,20 +156,14 @@ namespace ProMeasurement
         }
 
         private void btnConnectMeasurement_Click(object sender, EventArgs e)
-        {
-            
+        {          
             try
             {
-
-               
-               
                 //starting the power meter
                 _powerPort = new Rs232();
                 _powerPort.DataReceived += _powerPort_DataReceived;
                 Open(port);
                 timerPower.Enabled = true;
-
-            //    Actual_Position = _epos4.Operation.MotionInfo.GetPositionIs() / (163840 / 3);
             }
             catch
             {
@@ -942,29 +951,6 @@ namespace ProMeasurement
             }
         }
 
-        private void btnSettingMeasurement_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                if (CommProp == null)
-                {
-                    CommProp = new CommunicationProperties(_BaudRate._38400, Parity.None, _DataBits._8, StopBits.One);
-
-                }
-
-
-                communicationPropertiesDialog.Set(CommProp, port);
-
-                if (communicationPropertiesDialog.ShowDialog() == DialogResult.OK)
-                {
-                    port = communicationPropertiesDialog.Com;
-                }
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
+       
     }
 }
