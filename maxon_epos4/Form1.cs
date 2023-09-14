@@ -9,12 +9,17 @@ using static ProMeasurement.Test;
 using ZedGraph;
 using System.IO;
 using OfficeOpenXml;
-
+using System.Web;
+using static ZedGraph.ZoomState;
 
 namespace ProMeasurement
 {
     public partial class Pro_Measurement : Form
-    {   
+    {
+        CommunicationPropertiesDialog communicationPropertiesDialog = new CommunicationPropertiesDialog(true);
+        CommunicationProperties CommProp = null;
+        private string port = "COM7";
+
         //devices DLL's
         private DeviceManager _connector;
         private Device _epos4;
@@ -32,17 +37,17 @@ namespace ProMeasurement
         private double position = 0;
         private bool startGraph = false;
 
-        //graph 2
+        //graph 2 (only for the glue test)
         private PointPairList newPositionValues = new PointPairList();
         private PointPairList newForceValues = new PointPairList();
         private LineItem newforceCurve;
         private LineItem newpositionCurve;
 
         // state machine 
+        private int Actual_Position;
         private int done = 0;
         private int Start_Position; 
         private int Distance;
-        private int Actual_Position;
         private bool HasBeenStop = false;
         private bool HasBeenStart = false;
         private bool HasBeenRelese = false;
@@ -52,13 +57,28 @@ namespace ProMeasurement
         private GlueTest CurrentGlueTestState = GlueTest.Rest;
         private LineTest CurrentLineTestState = LineTest.Rest;
         private RotaryTest CurrentRotaryTestState = RotaryTest.Rest;
-        
-        //control to save the power meter
+
+        //To keep the power meter that does not exceed the power it knows how to measure
         private double Nforce;
+
+
 
         public Pro_Measurement()
         {
             InitializeComponent();
+
+            try
+            {
+                Program.INI = IniData.Deserialize(SerType.XML, IniData.ApplicationDataPath);
+            }
+            catch (Exception)
+            {
+
+                Program.INI.Communication.ComPort = port = communicationPropertiesDialog.Com;
+                Program.INI.Serialize();
+            }
+
+
 
             // Set up the ZedGraphControl
             graphPane = zedGraphControl1.GraphPane;
@@ -93,10 +113,12 @@ namespace ProMeasurement
             rbtnRelative.Checked = true;
             timerEngine.Interval = 500;
             timerEngine.Enabled = false;
+
             btnStart.Enabled = false;
             btnStop.Enabled = false;
             btnSave.Enabled = false;
             btnRelese.Enabled = false;
+            comboBoxMode.Enabled = false;
             comboBoxdirection.Enabled = false;
             textBoxDistance.Enabled = false;
             textBoxperiodicity.Enabled = false;
@@ -104,23 +126,41 @@ namespace ProMeasurement
             textBoxSpeed.Enabled = false;
             btnUp.Enabled = false;
             btnDown.Enabled = false;
-            comboBoxMode.Enabled = false;
 
-
-            //starting the power meter
-            _powerPort = new Rs232();
-            _powerPort.DataReceived += _powerPort_DataReceived;
-            deviceSetting();
-            Open();
-            timerPower.Enabled = true;
-
-            Actual_Position = _epos4.Operation.MotionInfo.GetPositionIs() / (163840 / 3);
-
+           
         }
 
         private void Pro_Measurement_FormClosed(object sender, FormClosedEventArgs e)
         {
             Stop();
+        }
+
+        private void btnConnectMotor_Click(object sender, EventArgs e)
+        {
+            deviceSetting();
+        }
+
+        private void btnConnectMeasurement_Click(object sender, EventArgs e)
+        {
+            
+            try
+            {
+
+               
+               
+                //starting the power meter
+                _powerPort = new Rs232();
+                _powerPort.DataReceived += _powerPort_DataReceived;
+                Open(port);
+                timerPower.Enabled = true;
+
+            //    Actual_Position = _epos4.Operation.MotionInfo.GetPositionIs() / (163840 / 3);
+            }
+            catch
+            {
+                timerPower.Enabled = false;
+                MessageBox.Show("can't connect to the power meter");
+            }       
         }
 
         private void comboBoxMode_SelectedIndexChanged(object sender, EventArgs e)
@@ -298,7 +338,6 @@ namespace ProMeasurement
         private void timerPower_Tick(object sender, EventArgs e)
         {
             _powerPort.Write("?");
-
         }
 
         // Engine function       
@@ -486,9 +525,9 @@ namespace ProMeasurement
         }
         
         // power meter function
-        private void Open()
+        private void Open(string port)
         {
-            _powerPort.Open("COM8", _BaudRate._38400, Parity.None, _DataBits._8, StopBits.One);
+            _powerPort.Open(port, _BaudRate._38400, Parity.None, _DataBits._8, StopBits.One);
         }
 
         public void _powerPort_DataReceived(object sender, System.IO.Ports.SerialDataReceivedEventArgs e)
@@ -530,9 +569,56 @@ namespace ProMeasurement
         }
 
         //save to files function
+        //private void SaveToExcel()
+        //{
+        //    ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
+        //    // Create a new Excel package
+        //    using (var excelPackage = new ExcelPackage())
+        //    {
+        //        var worksheet = excelPackage.Workbook.Worksheets.Add("Sheet1");
+
+        //        // Save the chart image as a PNG file
+        //        string chartImagePath = "C:\\Users\\hy790\\Documents\\graph.png";
+        //        zedGraphControl1.MasterPane.GetImage().Save(chartImagePath, System.Drawing.Imaging.ImageFormat.Png);
+
+        //        // Load the chart image into a byte array
+        //        byte[] chartImageBytes = System.IO.File.ReadAllBytes(chartImagePath);
+
+        //        // Add the chart image to the Excel worksheet
+        //        var excelImage = worksheet.Drawings.AddPicture("ChartImage", chartImagePath);
+        //        excelImage.SetPosition(150, 10);
+
+        //        // Populate additional data in the worksheet
+        //        worksheet.Cells["A1"].Value = "Type";
+        //        worksheet.Cells["B1"].Value = textBoxType.Text;
+
+        //        worksheet.Cells["A2"].Value = "Description";
+        //        worksheet.Cells["B2"].Value = textBoxTDescription.Text;
+
+        //        worksheet.Cells["A3"].Value = "Catalog Num";
+        //        worksheet.Cells["B3"].Value = textBoxCNum.Text;
+
+        //        worksheet.Cells["B4"].Value = textBoxSpringConstant.Text;
+        //        worksheet.Cells["C4"].Value = "For spring testing only!!!!!!!!!!!!!!!!!!!";
+        //        worksheet.Cells["A4"].Value = "Spring Constant";
+
+        //        worksheet.Cells["A5"].Value = "Timestamp";
+        //        worksheet.Cells["B5"].Value = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+        //        // Save the Excel file
+        //        string excelFilePath = "C:\\measure\\data_" + DateTime.Now.ToString("yyyy_MM_dd_H_mm_ss") + ".xlsx";
+        //        excelPackage.SaveAs(new FileInfo(excelFilePath));
+
+        //        MessageBox.Show("Data saved to Excel file: " + excelFilePath);
+        //    }
+        //}
+
+        //state machine timers
+
         private void SaveToExcel()
         {
             ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
+
             // Create a new Excel package
             using (var excelPackage = new ExcelPackage())
             {
@@ -546,6 +632,8 @@ namespace ProMeasurement
                 byte[] chartImageBytes = System.IO.File.ReadAllBytes(chartImagePath);
 
                 // Add the chart image to the Excel worksheet
+                //var excelImage = worksheet.Drawings.AddPicture("ChartImage", chartImageBytes);
+                //excelImage.SetPosition(150, 10);
                 var excelImage = worksheet.Drawings.AddPicture("ChartImage", chartImagePath);
                 excelImage.SetPosition(150, 10);
 
@@ -566,15 +654,25 @@ namespace ProMeasurement
                 worksheet.Cells["A5"].Value = "Timestamp";
                 worksheet.Cells["B5"].Value = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
-                // Save the Excel file
-                string excelFilePath = "C:\\measure\\data_" + DateTime.Now.ToString("yyyy_MM_dd_H_mm_ss") + ".xlsx";
-                excelPackage.SaveAs(new FileInfo(excelFilePath));
 
-                MessageBox.Show("Data saved to Excel file: " + excelFilePath);
+                // Create and configure the SaveFileDialog
+                using (SaveFileDialog saveFileDialog = new SaveFileDialog())
+                {
+                    saveFileDialog.Filter = "Excel Files|*.xlsx";
+                    saveFileDialog.Title = "Save Excel File";
+                    saveFileDialog.FileName = "MyExcelFile.xlsx"; // Default file name
+
+                    if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        // Save the Excel file using the selected file path
+                        excelPackage.SaveAs(new FileInfo(saveFileDialog.FileName));
+
+                        MessageBox.Show("Data saved to Excel file: " + saveFileDialog.FileName);
+                    }
+                }
             }
         }
 
-        //state machine timers
         private void timerModeTest_Tick(object sender, EventArgs e)
         {
             int actual_position = _epos4.Operation.MotionInfo.GetPositionIs() / (163840 / 3);
@@ -841,6 +939,31 @@ namespace ProMeasurement
 
                 default:
                     break;
+            }
+        }
+
+        private void btnSettingMeasurement_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (CommProp == null)
+                {
+                    CommProp = new CommunicationProperties(_BaudRate._38400, Parity.None, _DataBits._8, StopBits.One);
+
+                }
+
+
+                communicationPropertiesDialog.Set(CommProp, port);
+
+                if (communicationPropertiesDialog.ShowDialog() == DialogResult.OK)
+                {
+                    port = communicationPropertiesDialog.Com;
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
             }
         }
     }

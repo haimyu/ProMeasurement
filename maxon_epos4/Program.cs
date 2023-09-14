@@ -8,6 +8,8 @@ namespace ProMeasurement
 {
     internal static class Program
     {
+        public static IniData INI = IniData.Default();// new IniData();
+
         /// <summary>
         /// The main entry point for the application.
         /// </summary>

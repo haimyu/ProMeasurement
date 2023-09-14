@@ -73,11 +73,14 @@
             this.textBoxPowerMeter = new System.Windows.Forms.TextBox();
             this.label13 = new System.Windows.Forms.Label();
             this.btnStop = new System.Windows.Forms.Button();
+            this.btnConnectMotor = new System.Windows.Forms.Button();
+            this.btnConnectMeasurement = new System.Windows.Forms.Button();
+            this.btnSettingMeasurement = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // btnStopP
             // 
-            this.btnStopP.Location = new System.Drawing.Point(1487, 72);
+            this.btnStopP.Location = new System.Drawing.Point(1264, 72);
             this.btnStopP.Name = "btnStopP";
             this.btnStopP.Size = new System.Drawing.Size(120, 45);
             this.btnStopP.TabIndex = 1;
@@ -87,7 +90,7 @@
             // 
             // btnStart
             // 
-            this.btnStart.Location = new System.Drawing.Point(1627, 18);
+            this.btnStart.Location = new System.Drawing.Point(1404, 18);
             this.btnStart.Name = "btnStart";
             this.btnStart.Size = new System.Drawing.Size(120, 30);
             this.btnStart.TabIndex = 2;
@@ -181,7 +184,7 @@
             // 
             // btnRelese
             // 
-            this.btnRelese.Location = new System.Drawing.Point(1627, 104);
+            this.btnRelese.Location = new System.Drawing.Point(1404, 104);
             this.btnRelese.Name = "btnRelese";
             this.btnRelese.Size = new System.Drawing.Size(120, 30);
             this.btnRelese.TabIndex = 16;
@@ -197,7 +200,7 @@
             "Glue",
             "Line",
             "Rotary"});
-            this.comboBoxMode.Location = new System.Drawing.Point(1237, 26);
+            this.comboBoxMode.Location = new System.Drawing.Point(1114, 26);
             this.comboBoxMode.Name = "comboBoxMode";
             this.comboBoxMode.Size = new System.Drawing.Size(121, 24);
             this.comboBoxMode.TabIndex = 17;
@@ -252,7 +255,7 @@
             // label5
             // 
             this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(1234, 1);
+            this.label5.Location = new System.Drawing.Point(1111, 1);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(42, 16);
             this.label5.TabIndex = 22;
@@ -396,7 +399,7 @@
             // 
             this.btnRestart.BackColor = System.Drawing.Color.Crimson;
             this.btnRestart.ForeColor = System.Drawing.Color.Black;
-            this.btnRestart.Location = new System.Drawing.Point(1487, 19);
+            this.btnRestart.Location = new System.Drawing.Point(1264, 19);
             this.btnRestart.Name = "btnRestart";
             this.btnRestart.Size = new System.Drawing.Size(120, 42);
             this.btnRestart.TabIndex = 37;
@@ -406,7 +409,7 @@
             // 
             // btnClear
             // 
-            this.btnClear.Location = new System.Drawing.Point(1364, 19);
+            this.btnClear.Location = new System.Drawing.Point(1115, 78);
             this.btnClear.Name = "btnClear";
             this.btnClear.Size = new System.Drawing.Size(120, 42);
             this.btnClear.TabIndex = 38;
@@ -458,7 +461,7 @@
             // 
             // btnStop
             // 
-            this.btnStop.Location = new System.Drawing.Point(1627, 59);
+            this.btnStop.Location = new System.Drawing.Point(1404, 59);
             this.btnStop.Name = "btnStop";
             this.btnStop.Size = new System.Drawing.Size(120, 30);
             this.btnStop.TabIndex = 44;
@@ -466,11 +469,44 @@
             this.btnStop.UseVisualStyleBackColor = true;
             this.btnStop.Click += new System.EventHandler(this.btnStart_Click);
             // 
+            // btnConnectMotor
+            // 
+            this.btnConnectMotor.Location = new System.Drawing.Point(1585, 19);
+            this.btnConnectMotor.Name = "btnConnectMotor";
+            this.btnConnectMotor.Size = new System.Drawing.Size(162, 34);
+            this.btnConnectMotor.TabIndex = 45;
+            this.btnConnectMotor.Text = "Connect Motor";
+            this.btnConnectMotor.UseVisualStyleBackColor = true;
+            this.btnConnectMotor.Click += new System.EventHandler(this.btnConnectMotor_Click);
+            // 
+            // btnConnectMeasurement
+            // 
+            this.btnConnectMeasurement.Location = new System.Drawing.Point(1585, 59);
+            this.btnConnectMeasurement.Name = "btnConnectMeasurement";
+            this.btnConnectMeasurement.Size = new System.Drawing.Size(162, 30);
+            this.btnConnectMeasurement.TabIndex = 46;
+            this.btnConnectMeasurement.Text = "Connect Power Meter";
+            this.btnConnectMeasurement.UseVisualStyleBackColor = true;
+            this.btnConnectMeasurement.Click += new System.EventHandler(this.btnConnectMeasurement_Click);
+            // 
+            // btnSettingMeasurement
+            // 
+            this.btnSettingMeasurement.Location = new System.Drawing.Point(1585, 95);
+            this.btnSettingMeasurement.Name = "btnSettingMeasurement";
+            this.btnSettingMeasurement.Size = new System.Drawing.Size(162, 30);
+            this.btnSettingMeasurement.TabIndex = 47;
+            this.btnSettingMeasurement.Text = "Setting Power Meter";
+            this.btnSettingMeasurement.UseVisualStyleBackColor = true;
+            this.btnSettingMeasurement.Click += new System.EventHandler(this.btnSettingMeasurement_Click);
+            // 
             // Pro_Measurement
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1763, 641);
+            this.Controls.Add(this.btnSettingMeasurement);
+            this.Controls.Add(this.btnConnectMeasurement);
+            this.Controls.Add(this.btnConnectMotor);
             this.Controls.Add(this.btnStop);
             this.Controls.Add(this.label13);
             this.Controls.Add(this.textBoxPowerMeter);
@@ -565,6 +601,9 @@
         private System.Windows.Forms.TextBox textBoxPowerMeter;
         private System.Windows.Forms.Label label13;
         private System.Windows.Forms.Button btnStop;
+        private System.Windows.Forms.Button btnConnectMotor;
+        private System.Windows.Forms.Button btnConnectMeasurement;
+        private System.Windows.Forms.Button btnSettingMeasurement;
     }
 }
 
