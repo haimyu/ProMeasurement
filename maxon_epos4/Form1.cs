@@ -4,7 +4,6 @@ using System.Windows.Forms;
 using ProMeasurement.Properties;
 using EposCmd.Net;
 using EposCmd.Net.DeviceCmdSet.Operation;
-using System.Security.Policy;
 using System.IO.Ports;
 using static ProMeasurement.Test;
 using ZedGraph;
