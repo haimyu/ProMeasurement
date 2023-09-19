@@ -74,8 +74,8 @@
             this.label13 = new System.Windows.Forms.Label();
             this.btnStop = new System.Windows.Forms.Button();
             this.btnConnectMotor = new System.Windows.Forms.Button();
-            this.btnConnectMeasurement = new System.Windows.Forms.Button();
-            this.btnSettingMeasurement = new System.Windows.Forms.Button();
+            this.btnConnectPMeter = new System.Windows.Forms.Button();
+            this.btnSettingPMeter = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // btnStopP
@@ -479,33 +479,33 @@
             this.btnConnectMotor.UseVisualStyleBackColor = true;
             this.btnConnectMotor.Click += new System.EventHandler(this.btnConnectMotor_Click);
             // 
-            // btnConnectMeasurement
+            // btnConnectPMeter
             // 
-            this.btnConnectMeasurement.Location = new System.Drawing.Point(1585, 59);
-            this.btnConnectMeasurement.Name = "btnConnectMeasurement";
-            this.btnConnectMeasurement.Size = new System.Drawing.Size(162, 30);
-            this.btnConnectMeasurement.TabIndex = 46;
-            this.btnConnectMeasurement.Text = "Connect Power Meter";
-            this.btnConnectMeasurement.UseVisualStyleBackColor = true;
-            this.btnConnectMeasurement.Click += new System.EventHandler(this.btnConnectMeasurement_Click);
+            this.btnConnectPMeter.Location = new System.Drawing.Point(1585, 59);
+            this.btnConnectPMeter.Name = "btnConnectPMeter";
+            this.btnConnectPMeter.Size = new System.Drawing.Size(162, 30);
+            this.btnConnectPMeter.TabIndex = 46;
+            this.btnConnectPMeter.Text = "Connect Power Meter";
+            this.btnConnectPMeter.UseVisualStyleBackColor = true;
+            this.btnConnectPMeter.Click += new System.EventHandler(this.btnConnectPMeter_Click);
             // 
-            // btnSettingMeasurement
+            // btnSettingPMeter
             // 
-            this.btnSettingMeasurement.Location = new System.Drawing.Point(1585, 95);
-            this.btnSettingMeasurement.Name = "btnSettingMeasurement";
-            this.btnSettingMeasurement.Size = new System.Drawing.Size(162, 30);
-            this.btnSettingMeasurement.TabIndex = 47;
-            this.btnSettingMeasurement.Text = "Setting Power Meter";
-            this.btnSettingMeasurement.UseVisualStyleBackColor = true;
-            this.btnSettingMeasurement.Click += new System.EventHandler(this.btnSettingMeasurement_Click);
+            this.btnSettingPMeter.Location = new System.Drawing.Point(1585, 95);
+            this.btnSettingPMeter.Name = "btnSettingPMeter";
+            this.btnSettingPMeter.Size = new System.Drawing.Size(162, 30);
+            this.btnSettingPMeter.TabIndex = 47;
+            this.btnSettingPMeter.Text = "Setting Power Meter";
+            this.btnSettingPMeter.UseVisualStyleBackColor = true;
+            this.btnSettingPMeter.Click += new System.EventHandler(this.btnSettingPMeter_Click);
             // 
             // Pro_Measurement
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1763, 641);
-            this.Controls.Add(this.btnSettingMeasurement);
-            this.Controls.Add(this.btnConnectMeasurement);
+            this.Controls.Add(this.btnSettingPMeter);
+            this.Controls.Add(this.btnConnectPMeter);
             this.Controls.Add(this.btnConnectMotor);
             this.Controls.Add(this.btnStop);
             this.Controls.Add(this.label13);
@@ -602,8 +602,8 @@
         private System.Windows.Forms.Label label13;
         private System.Windows.Forms.Button btnStop;
         private System.Windows.Forms.Button btnConnectMotor;
-        private System.Windows.Forms.Button btnConnectMeasurement;
-        private System.Windows.Forms.Button btnSettingMeasurement;
+        private System.Windows.Forms.Button btnConnectPMeter;
+        private System.Windows.Forms.Button btnSettingPMeter;
     }
 }
 

@@ -9,13 +9,12 @@ using static ProMeasurement.Test;
 using ZedGraph;
 using System.IO;
 using OfficeOpenXml;
-using System.Web;
-using static ZedGraph.ZoomState;
 
 namespace ProMeasurement
 {
     public partial class Pro_Measurement : Form
     {
+        //save the last COM port connection use 
         CommunicationPropertiesDialog communicationPropertiesDialog = new CommunicationPropertiesDialog(true);
         CommunicationProperties CommProp = null;
         private string port = "COM3";
@@ -26,12 +25,12 @@ namespace ProMeasurement
         private Rs232 _powerPort;
 
         // graph 1
+        GraphPane graphPane;
         private DateTime testStartTime;
         private PointPairList forceValues = new PointPairList();
         private PointPairList positionValues = new PointPairList();
         private LineItem forceCurve;
         private LineItem positionCurve;
-        GraphPane graphPane;
         private string value;
         private double force;
         private double position = 0;
@@ -61,12 +60,11 @@ namespace ProMeasurement
         //To keep the power meter that does not exceed the power it knows how to measure
         private double Nforce;
 
-
-
         public Pro_Measurement()
         {
             InitializeComponent();
-
+            
+            //checking if he has a saved COM in file
             try
             {
                 Program.INI = IniData.Deserialize(SerType.XML, IniData.ApplicationDataPath);
@@ -107,6 +105,314 @@ namespace ProMeasurement
             newforceCurve.IsVisible = false;
         }
 
+        /// <summary>
+        /// Engine function       
+        /// </summary>
+
+        //set up the controller and the engine
+        private void deviceSetting()
+        {
+            try
+            {
+                _connector = new DeviceManager();
+
+                uint b = _connector.Baudrate;
+
+                _connector.Baudrate = b;
+                _connector.Timeout = 500;
+            }
+            catch (DeviceException a)
+            {
+                StopRefresh();
+                ShowMessageBox(a.ErrorMessage, a.ErrorCode);
+            }
+            catch (Exception a)
+            {
+                StopRefresh();
+
+                MessageBox.Show(a.Message);
+            }
+            ////
+            try
+            {
+                _epos4 = _connector.CreateDevice(1);
+
+                StateMachine sm = _epos4.Operation.StateMachine;
+
+                if (sm.GetFaultState())
+                {
+                    sm.ClearFault();
+                }
+
+                sm.SetEnableState();
+
+                timerEngine.Enabled = true;
+            }
+            catch (DeviceException a)
+            {
+                StopRefresh();
+                ShowMessageBox(a.ErrorMessage, a.ErrorCode);
+            }
+            catch (Exception a)
+            {
+                StopRefresh();
+                MessageBox.Show(a.Message);
+            }
+        }
+
+        //moves the target to the selected location 
+        private void Position(float positionInmm)
+        {
+            if (textBoxPowerMeter.Text != string.Empty)
+                Nforce = Convert.ToDouble(textBoxPowerMeter.Text);
+
+            float stepTo_mm = 163840 / 3; // 1 mm = 54613.333 steps
+            int positionInSteps = (int)Convert.ToInt64(stepTo_mm * positionInmm);
+            try
+            {
+                ProfilePositionMode ppm = _epos4.Operation.ProfilePositionMode;
+
+                textBoxPositionStart.Text = string.Format("{0}", Actual_Position);
+                if (stop == false)
+                    ppm.MoveToPosition(positionInSteps, rbtnRelative.Checked, true);
+
+                if (Nforce - 1 <= Math.Abs(force))
+                    ppm.HaltPositionMovement();
+
+                if (stop == true)
+                    ppm.HaltPositionMovement();
+            }
+            catch (DeviceException a)
+            {
+                StopRefresh();
+                ShowMessageBox(a.ErrorMessage, a.ErrorCode);
+            }
+            catch (OverflowException a)
+            {
+                MessageBox.Show(a.Message);
+            }
+            catch (FormatException a)
+            {
+                MessageBox.Show(a.Message);
+            }
+            catch (Exception a)
+            {
+                StopRefresh();
+                MessageBox.Show(a.Message);
+            }
+        }
+
+        //set up the speed that chosen
+        private void Speed(uint speed)
+        {
+            try
+            {
+                ProfilePositionMode ppm = _epos4.Operation.ProfilePositionMode;
+
+                ppm.ActivateProfilePositionMode();
+                ppm.SetPositionProfile(speed, 1000, 1000);
+                textBoxAOM.Text = _epos4.Operation.OperationMode.GetOperationModeAsString();
+            }
+            catch (DeviceException a)
+            {
+                StopRefresh();
+                ShowMessageBox(a.ErrorMessage, a.ErrorCode);
+            }
+            catch (OverflowException a)
+            {
+                MessageBox.Show(a.Message);
+            }
+            catch (FormatException a)
+            {
+                MessageBox.Show(a.Message);
+            }
+            catch (Exception a)
+            {
+                StopRefresh();
+
+                MessageBox.Show(a.Message);
+            }
+        }
+
+        //stop the engine move
+        private void Stop()
+        {
+            try
+            {
+                ProfilePositionMode ppm = _epos4.Operation.ProfilePositionMode;
+
+                ppm.ActivateProfilePositionMode();
+
+                textBoxAOM.Text = _epos4.Operation.OperationMode.GetOperationModeAsString();
+
+                ppm.HaltPositionMovement();
+
+            }
+            catch (DeviceException a)
+            {
+                StopRefresh();
+                ShowMessageBox(a.ErrorMessage, a.ErrorCode);
+            }
+            catch (Exception a)
+            {
+                StopRefresh();
+
+                MessageBox.Show(a.Message);
+            }
+        }
+
+        private void ClearGraph()
+        {
+
+            forceValues.Clear();
+            positionValues.Clear();
+            newPositionValues.Clear();
+            newForceValues.Clear();
+            zedGraphControl1.AxisChange();
+            zedGraphControl1.Invalidate();
+        }
+
+        private void StopRefresh()
+        {
+            try
+            {
+                timerEngine.Enabled = false;
+
+                btnStart.Enabled = false;
+                btnStopP.Enabled = false;
+
+                _epos4 = null;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+
+        private void ShowMessageBox(string text, uint errorCode)
+        {
+            var msg = string.Format("{0}\nErrorCode: {1:X8}", text, errorCode);
+
+            MessageBox.Show(msg, Resources.Caption_Error, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        /// <summary>
+        ///  power meter function
+        /// </summary>
+
+        //open the power meter port
+        private void Open(string port)
+        {
+            _powerPort.Open(port, _BaudRate._38400, Parity.None, _DataBits._8, StopBits.One);
+        }
+
+        //read the data from the power meter
+        public void _powerPort_DataReceived(object sender, System.IO.Ports.SerialDataReceivedEventArgs e)
+        {
+            if (InvokeRequired)
+            {
+                SerialDataReceivedEventHandler serialDataReceivedEventHandler = new SerialDataReceivedEventHandler(this._powerPort_DataReceived);
+                this.BeginInvoke(serialDataReceivedEventHandler, new object[] { sender, e });
+                return;
+            }
+
+            value = _powerPort.ReadAll();
+            textBoxForce.Text = value;
+
+            //------write to Graph-------         
+            if (startGraph == true)
+            {
+                int indexOfN = value.IndexOf("N");
+                value = value.Substring(0, indexOfN);
+                force = Convert.ToDouble(value);
+                double elapsedTime = (DateTime.Now - testStartTime).TotalSeconds;
+
+                if (HasBeenStop == false)
+                {
+                    positionValues.Add(elapsedTime, position);
+                    forceValues.Add(elapsedTime, force);
+                }
+                else
+                {
+                    newPositionValues.Add(elapsedTime, position);
+                    newForceValues.Add(elapsedTime, force);
+
+                }
+                zedGraphControl1.AxisChange();
+                zedGraphControl1.Invalidate();
+
+            }
+
+        }
+
+        /// <summary>
+        /// save
+        /// </summary>
+
+        //save to files function
+        private void SaveToExcel()
+        {
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+            // Create a new Excel package
+            using (var excelPackage = new ExcelPackage())
+            {
+                var worksheet = excelPackage.Workbook.Worksheets.Add("Sheet1");
+
+                // Save the chart image as a PNG file
+                string chartImagePath = "C:\\Users\\hy790\\Documents\\graph.png";
+                zedGraphControl1.MasterPane.GetImage().Save(chartImagePath, System.Drawing.Imaging.ImageFormat.Png);
+
+                // Load the chart image into a byte array
+                byte[] chartImageBytes = System.IO.File.ReadAllBytes(chartImagePath);
+
+                // Add the chart image to the Excel worksheet
+                //var excelImage = worksheet.Drawings.AddPicture("ChartImage", chartImageBytes);
+                //excelImage.SetPosition(150, 10);
+                var excelImage = worksheet.Drawings.AddPicture("ChartImage", chartImagePath);
+                excelImage.SetPosition(150, 10);
+
+                // Populate additional data in the worksheet
+                worksheet.Cells["A1"].Value = "Type";
+                worksheet.Cells["B1"].Value = textBoxType.Text;
+
+                worksheet.Cells["A2"].Value = "Description";
+                worksheet.Cells["B2"].Value = textBoxTDescription.Text;
+
+                worksheet.Cells["A3"].Value = "Catalog Num";
+                worksheet.Cells["B3"].Value = textBoxCNum.Text;
+
+                worksheet.Cells["B4"].Value = textBoxSpringConstant.Text;
+                worksheet.Cells["C4"].Value = "For spring testing only!!!!!!!!!!!!!!!!!!!";
+                worksheet.Cells["A4"].Value = "Spring Constant";
+
+                worksheet.Cells["A5"].Value = "Timestamp";
+                worksheet.Cells["B5"].Value = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+
+                // Create and configure the SaveFileDialog
+                using (SaveFileDialog saveFileDialog = new SaveFileDialog())
+                {
+                    saveFileDialog.Filter = "Excel Files|*.xlsx";
+                    saveFileDialog.Title = "Save Excel File";
+                    saveFileDialog.FileName = "MyExcelFile.xlsx"; // Default file name
+
+                    if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        // Save the Excel file using the selected file path
+                        excelPackage.SaveAs(new FileInfo(saveFileDialog.FileName));
+
+                        MessageBox.Show("Data saved to Excel file: " + saveFileDialog.FileName);
+                    }
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// intarface arrangement
+        /// </summary>
+        
         private void Form1_Load(object sender, EventArgs e)
         {
             //set up the setting in the load the program
@@ -133,8 +439,15 @@ namespace ProMeasurement
             Stop();
         }
 
-        private void btnSettingMeasurement_Click(object sender, EventArgs e)
+        private void btnConnectMotor_Click(object sender, EventArgs e)
         {
+            //connecting the engine
+            deviceSetting();
+        }
+
+        private void btnSettingPMeter_Click(object sender, EventArgs e)
+        {
+            //arrange the data
             if (CommProp == null)
             {
                 CommProp = new CommunicationProperties(_BaudRate._38400, Parity.None, _DataBits._8, StopBits.One);
@@ -150,16 +463,11 @@ namespace ProMeasurement
             }
         }
 
-        private void btnConnectMotor_Click(object sender, EventArgs e)
+        private void btnConnectPMeter_Click(object sender, EventArgs e)
         {
-            deviceSetting();
-        }
-
-        private void btnConnectMeasurement_Click(object sender, EventArgs e)
-        {          
+            //starting the power meter
             try
             {
-                //starting the power meter
                 _powerPort = new Rs232();
                 _powerPort.DataReceived += _powerPort_DataReceived;
                 Open(port);
@@ -169,11 +477,12 @@ namespace ProMeasurement
             {
                 timerPower.Enabled = false;
                 MessageBox.Show("can't connect to the power meter");
-            }       
+            }
         }
 
         private void comboBoxMode_SelectedIndexChanged(object sender, EventArgs e)
         {
+            //start the state machine
             timerModeTest.Start();
             switch (comboBoxMode.Text)
             {
@@ -346,342 +655,15 @@ namespace ProMeasurement
 
         private void timerPower_Tick(object sender, EventArgs e)
         {
+            //brings the power figure
             _powerPort.Write("?");
         }
 
-        // Engine function       
-        private void deviceSetting()
-        {
-            try
-            {
-                _connector = new DeviceManager();
+ 
 
-                uint b = _connector.Baudrate;
-
-                _connector.Baudrate = b;
-                _connector.Timeout = 500;
-            }
-            catch (DeviceException a)
-            {
-                StopRefresh();
-                ShowMessageBox(a.ErrorMessage, a.ErrorCode);
-            }
-            catch (Exception a)
-            {
-                StopRefresh();
-
-                MessageBox.Show(a.Message);
-            }
-            ////
-            try
-            {
-                _epos4 = _connector.CreateDevice(1);
-
-                StateMachine sm = _epos4.Operation.StateMachine;
-
-                if (sm.GetFaultState())
-                {
-                    sm.ClearFault();
-                }
-
-                sm.SetEnableState();
-
-                timerEngine.Enabled = true;
-            }
-            catch (DeviceException a)
-            {
-                StopRefresh();
-                ShowMessageBox(a.ErrorMessage, a.ErrorCode);
-            }
-            catch (Exception a)
-            {
-                StopRefresh();
-                MessageBox.Show(a.Message);
-            }
-        }
-
-        private void Position(float positionInmm)
-        {
-            if (textBoxPowerMeter.Text != string.Empty)
-                Nforce = Convert.ToDouble(textBoxPowerMeter.Text);
-
-            float stepTo_mm = 163840 / 3; // 1 mm = 54613.333 steps
-            int positionInSteps = (int)Convert.ToInt64( stepTo_mm * positionInmm);
-            try
-            {
-               ProfilePositionMode ppm = _epos4.Operation.ProfilePositionMode;
-
-                textBoxPositionStart.Text = string.Format("{0}",Actual_Position);
-                if(stop == false)
-                    ppm.MoveToPosition(positionInSteps, rbtnRelative.Checked, true);
-
-                if (Nforce - 1 <= Math.Abs(force))
-                    ppm.HaltPositionMovement();
-
-                if (stop == true)
-                    ppm.HaltPositionMovement();
-            }
-            catch (DeviceException a)
-            {
-                StopRefresh();
-                ShowMessageBox(a.ErrorMessage, a.ErrorCode);
-            }
-            catch (OverflowException a)
-            {
-                MessageBox.Show(a.Message);
-            }
-            catch (FormatException a)
-            {
-                MessageBox.Show(a.Message);
-            }
-            catch (Exception a)
-            {
-                StopRefresh();
-                MessageBox.Show(a.Message);
-            }
-        }
-
-        private void Speed(uint speed)
-        {
-            try
-            {
-                ProfilePositionMode ppm = _epos4.Operation.ProfilePositionMode;
-
-                ppm.ActivateProfilePositionMode();
-                ppm.SetPositionProfile(speed, 1000, 1000);
-                textBoxAOM.Text = _epos4.Operation.OperationMode.GetOperationModeAsString();
-            }
-            catch (DeviceException a)
-            {
-                StopRefresh();
-                ShowMessageBox(a.ErrorMessage, a.ErrorCode);
-            }
-            catch (OverflowException a)
-            {
-                MessageBox.Show(a.Message);
-            }
-            catch (FormatException a)
-            {
-                MessageBox.Show(a.Message);
-            }
-            catch (Exception a)
-            {
-                StopRefresh();
-
-                MessageBox.Show(a.Message);
-            }
-        }
-
-        private void Stop()
-        {
-            try
-            {
-                ProfilePositionMode ppm = _epos4.Operation.ProfilePositionMode;
-
-                ppm.ActivateProfilePositionMode();
-
-                textBoxAOM.Text = _epos4.Operation.OperationMode.GetOperationModeAsString();
-
-                ppm.HaltPositionMovement();
-
-            }
-            catch (DeviceException a)
-            {
-                StopRefresh();
-                ShowMessageBox(a.ErrorMessage, a.ErrorCode);
-            }
-            catch (Exception a)
-            {
-                StopRefresh();
-
-                MessageBox.Show(a.Message);
-            }
-        }
-
-        private void ClearGraph()
-        {
-
-            forceValues.Clear();
-            positionValues.Clear();
-            newPositionValues.Clear();
-            newForceValues.Clear();
-            zedGraphControl1.AxisChange();
-            zedGraphControl1.Invalidate();
-        }
-
-        private void StopRefresh()
-        {
-            try
-            {
-                timerEngine.Enabled = false;
-
-                btnStart.Enabled = false;
-                btnStopP.Enabled = false;
-
-                _epos4 = null;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
-        }
-
-        private void ShowMessageBox(string text, uint errorCode)
-        {
-            var msg = string.Format("{0}\nErrorCode: {1:X8}", text, errorCode);
-
-            MessageBox.Show(msg, Resources.Caption_Error, MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-        
-        // power meter function
-        private void Open(string port)
-        {
-            _powerPort.Open(port, _BaudRate._38400, Parity.None, _DataBits._8, StopBits.One);
-        }
-
-        public void _powerPort_DataReceived(object sender, System.IO.Ports.SerialDataReceivedEventArgs e)
-        {
-            if (InvokeRequired)
-            {
-                SerialDataReceivedEventHandler serialDataReceivedEventHandler = new SerialDataReceivedEventHandler(this._powerPort_DataReceived);
-                this.BeginInvoke(serialDataReceivedEventHandler,new object[] {sender,e});
-                return;
-            }
-
-            value = _powerPort.ReadAll();
-            textBoxForce.Text = value;
-
-            //------write to Graph-------         
-            if (startGraph == true)
-            {
-                int indexOfN = value.IndexOf("N");
-                value = value.Substring(0, indexOfN);
-                force = Convert.ToDouble(value);
-                double elapsedTime = (DateTime.Now - testStartTime).TotalSeconds;
-
-                if(HasBeenStop == false)
-                {
-                    positionValues.Add(elapsedTime, position);
-                    forceValues.Add(elapsedTime, force);
-                }
-                else
-                {
-                    newPositionValues.Add(elapsedTime, position);
-                    newForceValues.Add(elapsedTime, force);
-
-                }
-                zedGraphControl1.AxisChange();
-                zedGraphControl1.Invalidate();
-               
-            }
-
-        }
-
-        //save to files function
-        //private void SaveToExcel()
-        //{
-        //    ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
-        //    // Create a new Excel package
-        //    using (var excelPackage = new ExcelPackage())
-        //    {
-        //        var worksheet = excelPackage.Workbook.Worksheets.Add("Sheet1");
-
-        //        // Save the chart image as a PNG file
-        //        string chartImagePath = "C:\\Users\\hy790\\Documents\\graph.png";
-        //        zedGraphControl1.MasterPane.GetImage().Save(chartImagePath, System.Drawing.Imaging.ImageFormat.Png);
-
-        //        // Load the chart image into a byte array
-        //        byte[] chartImageBytes = System.IO.File.ReadAllBytes(chartImagePath);
-
-        //        // Add the chart image to the Excel worksheet
-        //        var excelImage = worksheet.Drawings.AddPicture("ChartImage", chartImagePath);
-        //        excelImage.SetPosition(150, 10);
-
-        //        // Populate additional data in the worksheet
-        //        worksheet.Cells["A1"].Value = "Type";
-        //        worksheet.Cells["B1"].Value = textBoxType.Text;
-
-        //        worksheet.Cells["A2"].Value = "Description";
-        //        worksheet.Cells["B2"].Value = textBoxTDescription.Text;
-
-        //        worksheet.Cells["A3"].Value = "Catalog Num";
-        //        worksheet.Cells["B3"].Value = textBoxCNum.Text;
-
-        //        worksheet.Cells["B4"].Value = textBoxSpringConstant.Text;
-        //        worksheet.Cells["C4"].Value = "For spring testing only!!!!!!!!!!!!!!!!!!!";
-        //        worksheet.Cells["A4"].Value = "Spring Constant";
-
-        //        worksheet.Cells["A5"].Value = "Timestamp";
-        //        worksheet.Cells["B5"].Value = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-
-        //        // Save the Excel file
-        //        string excelFilePath = "C:\\measure\\data_" + DateTime.Now.ToString("yyyy_MM_dd_H_mm_ss") + ".xlsx";
-        //        excelPackage.SaveAs(new FileInfo(excelFilePath));
-
-        //        MessageBox.Show("Data saved to Excel file: " + excelFilePath);
-        //    }
-        //}
-
-        //state machine timers
-
-        private void SaveToExcel()
-        {
-            ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
-
-            // Create a new Excel package
-            using (var excelPackage = new ExcelPackage())
-            {
-                var worksheet = excelPackage.Workbook.Worksheets.Add("Sheet1");
-
-                // Save the chart image as a PNG file
-                string chartImagePath = "C:\\Users\\hy790\\Documents\\graph.png";
-                zedGraphControl1.MasterPane.GetImage().Save(chartImagePath, System.Drawing.Imaging.ImageFormat.Png);
-
-                // Load the chart image into a byte array
-                byte[] chartImageBytes = System.IO.File.ReadAllBytes(chartImagePath);
-
-                // Add the chart image to the Excel worksheet
-                //var excelImage = worksheet.Drawings.AddPicture("ChartImage", chartImageBytes);
-                //excelImage.SetPosition(150, 10);
-                var excelImage = worksheet.Drawings.AddPicture("ChartImage", chartImagePath);
-                excelImage.SetPosition(150, 10);
-
-                // Populate additional data in the worksheet
-                worksheet.Cells["A1"].Value = "Type";
-                worksheet.Cells["B1"].Value = textBoxType.Text;
-
-                worksheet.Cells["A2"].Value = "Description";
-                worksheet.Cells["B2"].Value = textBoxTDescription.Text;
-
-                worksheet.Cells["A3"].Value = "Catalog Num";
-                worksheet.Cells["B3"].Value = textBoxCNum.Text;
-
-                worksheet.Cells["B4"].Value = textBoxSpringConstant.Text;
-                worksheet.Cells["C4"].Value = "For spring testing only!!!!!!!!!!!!!!!!!!!";
-                worksheet.Cells["A4"].Value = "Spring Constant";
-
-                worksheet.Cells["A5"].Value = "Timestamp";
-                worksheet.Cells["B5"].Value = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-
-
-                // Create and configure the SaveFileDialog
-                using (SaveFileDialog saveFileDialog = new SaveFileDialog())
-                {
-                    saveFileDialog.Filter = "Excel Files|*.xlsx";
-                    saveFileDialog.Title = "Save Excel File";
-                    saveFileDialog.FileName = "MyExcelFile.xlsx"; // Default file name
-
-                    if (saveFileDialog.ShowDialog() == DialogResult.OK)
-                    {
-                        // Save the Excel file using the selected file path
-                        excelPackage.SaveAs(new FileInfo(saveFileDialog.FileName));
-
-                        MessageBox.Show("Data saved to Excel file: " + saveFileDialog.FileName);
-                    }
-                }
-            }
-        }
-
+        /// <summary>
+        /// State machine for all modes 
+        /// </summary>
         private void timerModeTest_Tick(object sender, EventArgs e)
         {
             int actual_position = _epos4.Operation.MotionInfo.GetPositionIs() / (163840 / 3);
@@ -950,7 +932,5 @@ namespace ProMeasurement
                     break;
             }
         }
-
-       
     }
 }
