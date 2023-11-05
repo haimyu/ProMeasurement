@@ -199,7 +199,7 @@
             "Free",
             "Glue",
             "Line",
-            "Rotary"});
+            "Spring"});
             this.comboBoxMode.Location = new System.Drawing.Point(1114, 26);
             this.comboBoxMode.Name = "comboBoxMode";
             this.comboBoxMode.Size = new System.Drawing.Size(121, 24);

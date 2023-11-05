@@ -55,7 +55,7 @@ namespace ProMeasurement
         private FreeMode CurrentFreeTestState = FreeMode.None;
         private GlueTest CurrentGlueTestState = GlueTest.Rest;
         private LineTest CurrentLineTestState = LineTest.Rest;
-        private RotaryTest CurrentRotaryTestState = RotaryTest.Rest;
+        private SpringTest CurrentRotaryTestState = SpringTest.Rest;
 
         //To keep the power meter that does not exceed the power it knows how to measure
         private double Nforce;
@@ -499,8 +499,8 @@ namespace ProMeasurement
                     CurrentModeTestState = TestMode.Line;
                     break;
 
-                case "Rotary":
-                    CurrentModeTestState = TestMode.Rotary;
+                case "Spring":
+                    CurrentModeTestState = TestMode.Spring;
                     break;
 
                 default:
@@ -517,7 +517,7 @@ namespace ProMeasurement
             textBoxPositionStart.Text = string.Format("{0}", _epos4.Operation.MotionInfo.GetPositionIs() / (163840 / 3));
             Start_Position = Convert.ToInt32(textBoxPositionStart.Text);
 
-            if(CurrentLineTestState == LineTest.StartTest || CurrentRotaryTestState == RotaryTest.Testing)
+            if(CurrentLineTestState == LineTest.StartTest || CurrentRotaryTestState == SpringTest.Testing)
                 Distance = Convert.ToInt32(textBoxDistance.Text);
 
             switch (comboBoxMode.Text)
@@ -526,7 +526,7 @@ namespace ProMeasurement
                     stop = !stop;
                     break;
 
-                case "Rotary":
+                case "Spring":
                     stop = !stop;
                     break;
 
@@ -605,7 +605,7 @@ namespace ProMeasurement
             HasBeenRelese = false;
             CurrentGlueTestState = GlueTest.Rest;
             CurrentLineTestState = LineTest.Rest;
-            CurrentRotaryTestState = RotaryTest.Rest;
+            CurrentRotaryTestState = SpringTest.Rest;
             done = 0;
 
             // Re-enable necessary controls
@@ -719,7 +719,7 @@ namespace ProMeasurement
                         case GlueTest.MoveToPosition:
                             ClearGraph();
                             Speed(1000);
-                            Position(-50);
+                            Position(-0);
                             stop = false;
                             HasBeenStart = false;
                             if (_epos4.Operation.MotionInfo.GetPositionIs() / (163840 / 3) == -50)
@@ -732,7 +732,7 @@ namespace ProMeasurement
                                 startGraph = true;
 
                                 Speed(1000);
-                                Position(0);
+                                Position(10);
                                 btnRelese.Enabled = false;
                                 btnStart.Enabled = false;
                                 btnStop.Enabled = false;
@@ -872,18 +872,19 @@ namespace ProMeasurement
                     }
                     break;
 
-                case TestMode.Rotary:
+                case TestMode.Spring:
                     switch (CurrentRotaryTestState)
                     {
-                        case RotaryTest.Rest:
-                            CurrentRotaryTestState = RotaryTest.Settings;
+                        case SpringTest.Rest:
+                            CurrentRotaryTestState = SpringTest.Settings;
                             btnDown.Enabled = true;
                             btnUp.Enabled = true;
                             break;
 
-                        case RotaryTest.Settings:
+                        case SpringTest.Settings:
                             if (textBoxDistance.Text != string.Empty && textBoxSpeed.Text != string.Empty )
-                                CurrentRotaryTestState = RotaryTest.Testing;
+                                CurrentRotaryTestState = SpringTest.Testing;
+                            comboBoxdirection.Enabled = true;
                             textBoxSpeed.Enabled = true;
                             textBoxDistance.Enabled = true;
                             btnStart.Enabled = true;
@@ -892,25 +893,55 @@ namespace ProMeasurement
                             textBoxPositionStart.Text = textBoxPositionActualValue.Text;
                             break;
 
-                        case RotaryTest.Testing:
+                        case SpringTest.Testing:
                             if (HasBeenStart == true)
                             {
                                 startGraph = true;
-                                Position(Start_Position + Distance);
-                                Speed((uint)Convert.ToInt32(textBoxSpeed.Text));
-                                if (actual_position == Start_Position + Distance)
-                                    CurrentRotaryTestState = RotaryTest.Release;
+                                switch (comboBoxdirection.Text)
+                                {
+                                    case "Up":
+                                        Position(Start_Position + Distance);
+                                        Speed((uint)Convert.ToInt32(textBoxSpeed.Text));
+                                        if (actual_position == Start_Position + Distance)
+                                            CurrentRotaryTestState = SpringTest.Release;
+
+                                            break;
+
+                                    case "Down":
+                                        Position(Start_Position - Distance);
+                                        Speed((uint)Convert.ToInt32(textBoxSpeed.Text));
+                                        if (actual_position == Start_Position - Distance)
+                                            CurrentRotaryTestState = SpringTest.Release;
+                                            
+                                            break;
+                                }
+                                
                             }
                             break;
 
-                        case RotaryTest.Release:
+                            //case SpringTest.Check:
+                            //    switch (comboBoxdirection.Text)
+                            //    {
+                            //        case "Up":
+                            //            if (actual_position == Start_Position + Distance)
+                            //                CurrentRotaryTestState = SpringTest.Release;
+                            //        break;
+
+                            //        case "Down":
+                            //            if (actual_position == Start_Position + Distance)
+                            //                CurrentRotaryTestState = SpringTest.Release;
+                            //        break;
+                            //    }
+                            //    break;
+
+                        case SpringTest.Release:
                             startGraph = false;
                             btnDown.Enabled = true;
                             btnUp.Enabled = true;
-                            CurrentRotaryTestState = RotaryTest.Save;
+                            CurrentRotaryTestState = SpringTest.Save;
                             break;
 
-                        case RotaryTest.Save:
+                        case SpringTest.Save:
                             if (textBoxCNum.Text != string.Empty && textBoxTDescription.Text != string.Empty && textBoxType.Text != string.Empty)
                             {
                                 btnSave.Enabled = true;
@@ -920,7 +951,7 @@ namespace ProMeasurement
                             value = value.Substring(0, indexOfN);
                             spring_constant = Convert.ToDouble(value) / Convert.ToDouble(textBoxDistance.Text);
                             textBoxSpringConstant.Text = Convert.ToString(spring_constant);
-                            CurrentRotaryTestState = RotaryTest.Rest;
+                            CurrentRotaryTestState = SpringTest.Rest;
                             break;
 
                         default:

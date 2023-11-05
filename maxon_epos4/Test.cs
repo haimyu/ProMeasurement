@@ -15,7 +15,7 @@ namespace ProMeasurement
             Free,
             Glue,
             Line,
-            Rotary,
+            Spring,
         }
         public enum FreeMode
         {
@@ -45,11 +45,12 @@ namespace ProMeasurement
             Release,
             Save,
         }
-        public enum RotaryTest
+        public enum SpringTest
         {
             Rest,
             Settings,
             Testing,
+            Check,
             Release,
             Save,
         }
