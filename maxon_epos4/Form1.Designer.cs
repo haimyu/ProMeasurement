@@ -428,6 +428,7 @@
             // 
             // textBoxSpringConstant
             // 
+            this.textBoxSpringConstant.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.textBoxSpringConstant.Location = new System.Drawing.Point(961, 596);
             this.textBoxSpringConstant.Name = "textBoxSpringConstant";
             this.textBoxSpringConstant.Size = new System.Drawing.Size(143, 22);
@@ -436,6 +437,7 @@
             // 
             // label12
             // 
+            this.label12.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.label12.AutoSize = true;
             this.label12.Location = new System.Drawing.Point(961, 575);
             this.label12.Name = "label12";

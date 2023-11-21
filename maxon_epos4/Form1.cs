@@ -902,37 +902,18 @@ namespace ProMeasurement
                                     case "Up":
                                         Position(Start_Position + Distance);
                                         Speed((uint)Convert.ToInt32(textBoxSpeed.Text));
-                                        if (actual_position == Start_Position + Distance)
-                                            CurrentRotaryTestState = SpringTest.Release;
-
                                             break;
 
                                     case "Down":
                                         Position(Start_Position - Distance);
                                         Speed((uint)Convert.ToInt32(textBoxSpeed.Text));
-                                        if (actual_position == Start_Position - Distance)
-                                            CurrentRotaryTestState = SpringTest.Release;
-                                            
                                             break;
                                 }
-                                
+
+                                if (actual_position == Start_Position - Distance || actual_position == Start_Position + Distance)
+                                    CurrentRotaryTestState = SpringTest.Release;
                             }
                             break;
-
-                            //case SpringTest.Check:
-                            //    switch (comboBoxdirection.Text)
-                            //    {
-                            //        case "Up":
-                            //            if (actual_position == Start_Position + Distance)
-                            //                CurrentRotaryTestState = SpringTest.Release;
-                            //        break;
-
-                            //        case "Down":
-                            //            if (actual_position == Start_Position + Distance)
-                            //                CurrentRotaryTestState = SpringTest.Release;
-                            //        break;
-                            //    }
-                            //    break;
 
                         case SpringTest.Release:
                             startGraph = false;
